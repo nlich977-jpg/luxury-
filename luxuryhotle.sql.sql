@@ -405,3 +405,105 @@ SELECT * FROM v_HD_ChiTiet;
 SELECT * FROM v_PhongTrong;
 SELECT * FROM v_ThongKeDV;
 SELECT SUM(tongTien) AS TongDoanhThu FROM HD WHERE ttThanhToan = 'Paid';
+-- ============================================================
+-- THÊM KHÁCH HÀNG MỚI (KHACH)
+-- ============================================================
+INSERT INTO KHACH (tenKH, cmnd, sdt, email, diemTL) VALUES
+(N'Ngô Thị Thanh', '1234567890', '0909123001', 'thanh.ngo@email.com', 50),
+(N'Hoàng Văn Minh', '2345678901', '0918123456', 'minh.hoang@email.com', 120),
+(N'Trần Thị Thu', '3456789012', '0939456789', 'thu.tran@email.com', 0),
+(N'Đỗ Văn Long', '4567890123', '0978123456', 'long.do@email.com', 200),
+(N'Bùi Thị Ngọc', '5678901234', '0988123456', 'ngoc.bui@email.com', 30),
+(N'Lê Văn Phúc', '6789012345', '0919234567', 'phuc.le@email.com', 80),
+(N'Phạm Thị Yến', '7890123456', '0909345678', 'yen.pham@email.com', 10),
+(N'Vũ Văn Khánh', '8901234567', '0978456789', 'khanh.vu@email.com', 150),
+(N'Đặng Thị Hoa', '9012345678', '0919567890', 'hoa.dang@email.com', 0),
+(N'Lý Văn Hùng', '0123456790', '0909678901', 'hung.ly@email.com', 60),
+(N'Mai Thị Lan', '1123456791', '0939789012', 'lan.mai@email.com', 40),
+(N'Trương Văn Tài', '2123456792', '0978890123', 'tai.truong@email.com', 90),
+(N'Võ Thị Tuyết', '3123456793', '0909901234', 'tuyet.vo@email.com', 20),
+(N'Hồ Văn Nam', '4123456794', '0919012345', 'nam.ho@email.com', 110),
+(N'Đinh Thị Hằng', '5123456795', '0939123456', 'hang.dinh@email.com', 70);
+
+-- ============================================================
+-- THÊM PHÒNG MỚI (để có thêm lựa chọn đặt phòng)
+-- ============================================================
+INSERT INTO P (soP, tang, trangThaiP, maLP, maKS) VALUES
+('505', 5, N'Trống', 1, 1),
+('506', 5, N'Trống', 1, 1),
+('507', 5, N'Trống', 2, 1),
+('508', 5, N'Trống', 2, 1),
+('509', 5, N'Trống', 3, 1),
+('510', 5, N'Trống', 3, 1),
+('601', 6, N'Trống', 1, 2),
+('602', 6, N'Trống', 1, 2),
+('603', 6, N'Trống', 2, 2),
+('604', 6, N'Trống', 2, 2),
+('605', 6, N'Trống', 3, 2),
+('701', 7, N'Trống', 1, 3),
+('702', 7, N'Trống', 1, 3),
+('703', 7, N'Trống', 2, 3),
+('704', 7, N'Trống', 2, 3),
+('705', 7, N'Trống', 3, 3);
+
+-- ============================================================
+-- THÊM CÁC ĐẶT PHÒNG MỚI (DP) với nhiều trạng thái
+-- ============================================================
+INSERT INTO DP (maDPHienThi, ngayNhan, ngayTra, soKhach, trangThai, maKH, maP, soBoGiat, soNgayWifi, soLuotSpa, tongTienDV) VALUES
+-- (maKH tương ứng với thứ tự insert bên trên)
+-- 1. Ngô Thị Thanh – đặt phòng đã nhận (CheckedIn)
+('LUX-2026-005', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), 2, N'CheckedIn', 6, 7, 1, 1, 0, 80000),
+-- 2. Hoàng Văn Minh – đặt phòng đã trả (CheckedOut)
+('LUX-2026-006', DATE_SUB(CURDATE(), INTERVAL 4 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1, N'CheckedOut', 7, 8, 0, 2, 1, 460000),
+-- 3. Trần Thị Thu – đặt phòng chờ xác nhận (Pending)
+('LUX-2026-007', DATE_ADD(CURDATE(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 5 DAY), 2, N'Pending', 8, 9, 0, 0, 0, 0),
+-- 4. Đỗ Văn Long – đã xác nhận nhưng chưa nhận (Confirmed)
+('LUX-2026-008', DATE_ADD(CURDATE(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 4 DAY), 3, N'Confirmed', 9, 10, 2, 1, 1, 330000),
+-- 5. Bùi Thị Ngọc – đang ở (CheckedIn)
+('LUX-2026-009', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 3 DAY), 2, N'CheckedIn', 10, 11, 0, 3, 0, 90000),
+-- 6. Lê Văn Phúc – đặt phòng đã trả
+('LUX-2026-010', DATE_SUB(CURDATE(), INTERVAL 6 DAY), DATE_SUB(CURDATE(), INTERVAL 3 DAY), 1, N'CheckedOut', 11, 12, 3, 0, 0, 150000),
+-- 7. Phạm Thị Yến – đặt phòng chờ xác nhận
+('LUX-2026-011', DATE_ADD(CURDATE(), INTERVAL 5 DAY), DATE_ADD(CURDATE(), INTERVAL 7 DAY), 2, N'Pending', 12, 13, 0, 1, 0, 30000),
+-- 8. Vũ Văn Khánh – đã xác nhận
+('LUX-2026-012', DATE_ADD(CURDATE(), INTERVAL 2 DAY), DATE_ADD(CURDATE(), INTERVAL 6 DAY), 4, N'Confirmed', 13, 14, 1, 2, 1, 310000),
+-- 9. Đặng Thị Hoa – đang ở
+('LUX-2026-013', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 DAY), 2, N'CheckedIn', 14, 15, 0, 0, 0, 0),
+-- 10. Lý Văn Hùng – đã trả phòng
+('LUX-2026-014', DATE_SUB(CURDATE(), INTERVAL 2 DAY), DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1, N'CheckedOut', 15, 16, 2, 1, 0, 130000),
+-- 11. Mai Thị Lan – đặt phòng mới (Pending)
+('LUX-2026-015', DATE_ADD(CURDATE(), INTERVAL 4 DAY), DATE_ADD(CURDATE(), INTERVAL 6 DAY), 2, N'Pending', 16, 17, 0, 0, 0, 0),
+-- 12. Trương Văn Tài – đã xác nhận
+('LUX-2026-016', DATE_ADD(CURDATE(), INTERVAL 1 DAY), DATE_ADD(CURDATE(), INTERVAL 3 DAY), 2, N'Confirmed', 17, 18, 1, 1, 0, 80000),
+-- 13. Võ Thị Tuyết – đang ở
+('LUX-2026-017', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), 2, N'CheckedIn', 18, 19, 0, 2, 1, 260000),
+-- 14. Hồ Văn Nam – đã trả phòng
+('LUX-2026-018', DATE_SUB(CURDATE(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 2 DAY), 1, N'CheckedOut', 19, 20, 4, 0, 0, 200000),
+-- 15. Đinh Thị Hằng – đang ở
+('LUX-2026-019', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 4 DAY), 2, N'CheckedIn', 20, 21, 2, 3, 0, 190000);
+
+-- ============================================================
+-- THÊM HÓA ĐƠN VÀ THANH TOÁN CHO CÁC ĐẶT PHÒNG ĐÃ TRẢ
+-- ============================================================
+-- Lấy mã DP của các đặt phòng đã trả (CheckedOut)
+-- Giả sử các maDP tương ứng là: 6, 10, 14, 18 (tự điều chỉnh theo thứ tự thực tế)
+-- Bạn có thể kiểm tra maDP thực tế bằng SELECT maDP, maDPHienThi FROM DP WHERE trangThai = 'CheckedOut';
+-- Sau đó thay các giá trị maDP dưới đây cho đúng.
+
+-- Chèn hóa đơn cho các đặt phòng đã trả
+INSERT INTO HD (maDP, ngayXuat, tienP, tienDV, giamGia, tongTien, ttThanhToan) VALUES
+-- (maDP = 6, ngày xuất = ngày trả)
+(6, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1200000, 460000, 0, 1660000, N'Paid'),
+-- (maDP = 10, ngày xuất = ngày trả)
+(10, DATE_SUB(CURDATE(), INTERVAL 3 DAY), 2400000, 150000, 50000, 2500000, N'Paid'),
+-- (maDP = 14, ngày xuất = ngày trả)
+(14, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 800000, 130000, 0, 930000, N'Paid'),
+-- (maDP = 18, ngày xuất = ngày trả)
+(18, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 1600000, 200000, 0, 1800000, N'Paid');
+
+-- Chèn thanh toán cho các hóa đơn trên (maHD tương ứng)
+INSERT INTO TT (maHD, hinhThuc, soTien, ngayTT, ghiChu) VALUES
+(3, N'Cash', 1660000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), N'Thanh toán tiền mặt'),
+(4, N'Card', 2500000, DATE_SUB(CURDATE(), INTERVAL 3 DAY), N'Thanh toán thẻ tín dụng'),
+(5, N'Cash', 930000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), N'Thanh toán tiền mặt'),
+(6, N'BankTransfer', 1800000, DATE_SUB(CURDATE(), INTERVAL 2 DAY), N'Chuyển khoản ngân hàng');
