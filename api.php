@@ -1,7 +1,7 @@
 <?php
-
+// ==========================================================
 // api.php - XỬ LÝ TẤT CẢ YÊU CẦU TỪ FRONTEND
-
+// ==========================================================
 
 error_reporting(0);
 ini_set('display_errors', 0);
@@ -21,7 +21,7 @@ function jsonSuccess($data = [], $message = 'Thành công') {
         'success' => true,
         'message' => $message,
         'data' => $data
-    ], JSON_UNESCAPED_UNICODE);
+    ]);
     exit();
 }
 
@@ -31,15 +31,13 @@ function jsonError($message = 'Có lỗi xảy ra', $code = 400) {
         'success' => false,
         'message' => $message,
         'data' => null
-    ], JSON_UNESCAPED_UNICODE);
+    ]);
     exit();
 }
 
-
-// KẾT NỐI DATABASE
-
+// KẾT NỐI DATABASE (tên database viết thường: luxuryhotel)
 $host = 'localhost';
-$dbname = 'luxuryhotel';   // Tên database của bạn (chữ thường)
+$dbname = 'luxuryhotel';
 $username = 'root';
 $password = '';
 
@@ -56,9 +54,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($action) {
 
-    
+    // ==========================================================
     // 1. ĐĂNG NHẬP (POST)
-  
+    // ==========================================================
     case 'login':
         if ($method != 'POST') jsonError('Phương thức không được hỗ trợ', 405);
         $input = json_decode(file_get_contents('php://input'), true);
@@ -66,7 +64,8 @@ switch ($action) {
         $password = isset($input['password']) ? trim($input['password']) : '';
         if (empty($username) || empty($password)) jsonError('Vui lòng nhập tên đăng nhập và mật khẩu');
         try {
-            $sql = "SELECT maNV, tenNV, chucVu FROM NV WHERE tenNV = ? AND sdtNV = ?";
+            // Sử dụng bảng `nv` và cột `sdtNV` làm mật khẩu
+            $sql = "SELECT maNV, tenNV, chucVu FROM nv WHERE tenNV = ? AND sdtNV = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$username, $password]);
             $nv = $stmt->fetch();
@@ -84,9 +83,9 @@ switch ($action) {
         }
         break;
 
-   
+    // ==========================================================
     // 2. TRA CỨU ĐẶT PHÒNG (GET)
-    
+    // ==========================================================
     case 'search_booking':
         if ($method != 'GET') jsonError('Phương thức không được hỗ trợ', 405);
         $code = isset($_GET['code']) ? trim($_GET['code']) : '';
@@ -112,10 +111,10 @@ switch ($action) {
                     lp.tenLP AS loaiPhong,
                     lp.gia AS giaPhong,
                     DATEDIFF(dp.ngayTra, dp.ngayNhan) AS soDem
-                FROM DP dp
-                JOIN KHACH kh ON dp.maKH = kh.maKH
-                JOIN P p ON dp.maP = p.maP
-                JOIN LP lp ON p.maLP = lp.maLP
+                FROM dp
+                JOIN khach kh ON dp.maKH = kh.maKH
+                JOIN p ON dp.maP = p.maP
+                JOIN lp ON p.maLP = lp.maLP
                 WHERE dp.maDPHienThi = ?
             ";
             $stmt = $conn->prepare($sql);
@@ -131,9 +130,10 @@ switch ($action) {
         }
         break;
 
-    
+    // ==========================================================
     // 3. NHẬN PHÒNG (CHECK-IN) (PUT)
-    
+    // ==========================================================
+    case 'checkin':
         if ($method != 'PUT') jsonError('Phương thức không được hỗ trợ', 405);
         $input = json_decode(file_get_contents('php://input'), true);
         $bookingCode = isset($input['bookingCode']) ? trim($input['bookingCode']) : '';
@@ -141,20 +141,20 @@ switch ($action) {
         if (empty($bookingCode) || empty($cmnd)) jsonError('Vui lòng nhập đầy đủ thông tin');
         try {
             $conn->beginTransaction();
-            $sql = "SELECT maDP, maP, maKH FROM DP WHERE maDPHienThi = ? AND trangThai = 'Pending'";
+            $sql = "SELECT maDP, maP, maKH FROM dp WHERE maDPHienThi = ? AND trangThai = 'Pending'";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$bookingCode]);
             $booking = $stmt->fetch();
             if (!$booking) jsonError('Không tìm thấy đặt phòng hoặc đã được xử lý');
-            $sql = "SELECT maKH, cmnd FROM KHACH WHERE maKH = ?";
+            $sql = "SELECT maKH, cmnd FROM khach WHERE maKH = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$booking['maKH']]);
             $khach = $stmt->fetch();
             if ($khach['cmnd'] != $cmnd) jsonError('CMND không trùng khớp. Vui lòng kiểm tra lại!');
-            $sql = "UPDATE DP SET trangThai = 'CheckedIn' WHERE maDP = ?";
+            $sql = "UPDATE dp SET trangThai = 'CheckedIn' WHERE maDP = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$booking['maDP']]);
-            $sql = "UPDATE P SET trangThaiP = N'Đang dùng' WHERE maP = ?";
+            $sql = "UPDATE p SET trangThaiP = N'Đang dùng' WHERE maP = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$booking['maP']]);
             $conn->commit();
@@ -168,9 +168,9 @@ switch ($action) {
         }
         break;
 
-    
+    // ==========================================================
     // 4. TÌM KHÁCH THEO PHÒNG (GET)
-   
+    // ==========================================================
     case 'find_guest':
         if ($method != 'GET') jsonError('Phương thức không được hỗ trợ', 405);
         $roomNumber = isset($_GET['room']) ? trim($_GET['room']) : '';
@@ -196,10 +196,10 @@ switch ($action) {
                     lp.tenLP AS loaiPhong,
                     lp.gia AS giaPhong,
                     DATEDIFF(dp.ngayTra, dp.ngayNhan) AS soDem
-                FROM DP dp
-                JOIN KHACH kh ON dp.maKH = kh.maKH
-                JOIN P p ON dp.maP = p.maP
-                JOIN LP lp ON p.maLP = lp.maLP
+                FROM dp
+                JOIN khach kh ON dp.maKH = kh.maKH
+                JOIN p ON dp.maP = p.maP
+                JOIN lp ON p.maLP = lp.maLP
                 WHERE p.soP = ? AND dp.trangThai = 'CheckedIn'
             ";
             $stmt = $conn->prepare($sql);
@@ -215,9 +215,9 @@ switch ($action) {
         }
         break;
 
-    
+    // ==========================================================
     // 5. THÊM DỊCH VỤ (POST)
-   
+    // ==========================================================
     case 'add_service':
         if ($method != 'POST') jsonError('Phương thức không được hỗ trợ', 405);
         $input = json_decode(file_get_contents('php://input'), true);
@@ -231,7 +231,7 @@ switch ($action) {
         $thanhTien = $soLuong * $gia;
         try {
             $conn->beginTransaction();
-            $sql = "SELECT maDP FROM DP WHERE maDPHienThi = ? AND trangThai = 'CheckedIn'";
+            $sql = "SELECT maDP FROM dp WHERE maDPHienThi = ? AND trangThai = 'CheckedIn'";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$bookingCode]);
             $booking = $stmt->fetch();
@@ -240,7 +240,7 @@ switch ($action) {
             if ($loaiDV == 'Giat') $field = 'soBoGiat';
             else if ($loaiDV == 'Wifi') $field = 'soNgayWifi';
             else $field = 'soLuotSpa';
-            $sql = "UPDATE DP SET $field = $field + ?, tongTienDV = tongTienDV + ? WHERE maDP = ?";
+            $sql = "UPDATE dp SET $field = $field + ?, tongTienDV = tongTienDV + ? WHERE maDP = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$soLuong, $thanhTien, $booking['maDP']]);
             $conn->commit();
@@ -255,9 +255,9 @@ switch ($action) {
         }
         break;
 
-  
+    // ==========================================================
     // 6. TÍNH TIỀN CHECKOUT (GET)
-    
+    // ==========================================================
     case 'calculate_checkout':
         if ($method != 'GET') jsonError('Phương thức không được hỗ trợ', 405);
         $roomNumber = isset($_GET['room']) ? trim($_GET['room']) : '';
@@ -281,10 +281,10 @@ switch ($action) {
                     dp.soLuotSpa,
                     dp.tongTienDV,
                     dp.trangThai
-                FROM DP dp
-                JOIN KHACH kh ON dp.maKH = kh.maKH
-                JOIN P p ON dp.maP = p.maP
-                JOIN LP lp ON p.maLP = lp.maLP
+                FROM dp
+                JOIN khach kh ON dp.maKH = kh.maKH
+                JOIN p ON dp.maP = p.maP
+                JOIN lp ON p.maLP = lp.maLP
                 WHERE p.soP = ? AND dp.trangThai = 'CheckedIn'
             ";
             $stmt = $conn->prepare($sql);
@@ -302,9 +302,9 @@ switch ($action) {
         }
         break;
 
-    
+    // ==========================================================
     // 7. TRẢ PHÒNG (CHECKOUT) (PUT)
-    
+    // ==========================================================
     case 'checkout':
         if ($method != 'PUT') jsonError('Phương thức không được hỗ trợ', 405);
         $input = json_decode(file_get_contents('php://input'), true);
@@ -314,31 +314,31 @@ switch ($action) {
         if (empty($roomNumber) || empty($hinhThucTT) || $soTien <= 0) jsonError('Vui lòng nhập đầy đủ thông tin');
         try {
             $conn->beginTransaction();
-            $sql = "SELECT maDP, maP FROM DP WHERE maP = (SELECT maP FROM P WHERE soP = ?) AND trangThai = 'CheckedIn'";
+            $sql = "SELECT maDP, maP FROM dp WHERE maP = (SELECT maP FROM p WHERE soP = ?) AND trangThai = 'CheckedIn'";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$roomNumber]);
             $booking = $stmt->fetch();
             if (!$booking) jsonError('Không tìm thấy đặt phòng đang ở');
-            $sql = "UPDATE DP SET trangThai = 'CheckedOut' WHERE maDP = ?";
+            $sql = "UPDATE dp SET trangThai = 'CheckedOut' WHERE maDP = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$booking['maDP']]);
-            $sql = "INSERT INTO HD (maDP, ngayXuat, tienP, tienDV, tongTien, ttThanhToan) 
+            $sql = "INSERT INTO hd (maDP, ngayXuat, tienP, tienDV, tongTien, ttThanhToan) 
                     SELECT maDP, CURDATE(), 
-                        DATEDIFF(ngayTra, ngayNhan) * (SELECT gia FROM LP lp JOIN P p ON p.maLP = lp.maLP WHERE p.maP = ?),
+                        DATEDIFF(ngayTra, ngayNhan) * (SELECT gia FROM lp JOIN p ON p.maLP = lp.maLP WHERE p.maP = ?),
                         tongTienDV,
-                        (DATEDIFF(ngayTra, ngayNhan) * (SELECT gia FROM LP lp JOIN P p ON p.maLP = lp.maLP WHERE p.maP = ?)) + tongTienDV,
+                        (DATEDIFF(ngayTra, ngayNhan) * (SELECT gia FROM lp JOIN p ON p.maLP = lp.maLP WHERE p.maP = ?)) + tongTienDV,
                         'Pending'
-                    FROM DP WHERE maDP = ?";
+                    FROM dp WHERE maDP = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$booking['maP'], $booking['maP'], $booking['maDP']]);
             $maHD = $conn->lastInsertId();
-            $sql = "INSERT INTO TT (maHD, hinhThuc, soTien, ngayTT) VALUES (?, ?, ?, CURDATE())";
+            $sql = "INSERT INTO tt (maHD, hinhThuc, soTien, ngayTT) VALUES (?, ?, ?, CURDATE())";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$maHD, $hinhThucTT, $soTien]);
-            $sql = "UPDATE HD SET ttThanhToan = 'Paid' WHERE maHD = ?";
+            $sql = "UPDATE hd SET ttThanhToan = 'Paid' WHERE maHD = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$maHD]);
-            $sql = "UPDATE P SET trangThaiP = N'Trống' WHERE maP = ?";
+            $sql = "UPDATE p SET trangThaiP = N'Trống' WHERE maP = ?";
             $stmt = $conn->prepare($sql);
             $stmt->execute([$booking['maP']]);
             $conn->commit();
@@ -352,9 +352,9 @@ switch ($action) {
         }
         break;
 
-    
+    // ==========================================================
     // 8. DANH SÁCH PHÒNG (GET)
-  
+    // ==========================================================
     case 'list_rooms':
         if ($method != 'GET') jsonError('Phương thức không được hỗ trợ', 405);
         $maKS = isset($_GET['khachsan']) ? intval($_GET['khachsan']) : 1;
@@ -364,16 +364,16 @@ switch ($action) {
                     p.maP,
                     p.soP AS soPhong,
                     p.tang,
-                    p.trangThaiP,
+                    p.trangThaiP AS trangThai,
                     lp.tenLP AS loaiPhong,
                     lp.gia AS giaPhong,
                     ks.tenKS AS khachSan,
                     COALESCE(kh.tenKH, '-') AS tenKhach
-                FROM P p
-                JOIN LP lp ON p.maLP = lp.maLP
-                JOIN KS ks ON p.maKS = ks.maKS
-                LEFT JOIN DP dp ON p.maP = dp.maP AND dp.trangThai = 'CheckedIn'
-                LEFT JOIN KHACH kh ON dp.maKH = kh.maKH
+                FROM p
+                JOIN lp ON p.maLP = lp.maLP
+                JOIN ks ON p.maKS = ks.maKS
+                LEFT JOIN dp ON p.maP = dp.maP AND dp.trangThai = 'CheckedIn'
+                LEFT JOIN khach kh ON dp.maKH = kh.maKH
                 WHERE p.maKS = ?
                 ORDER BY p.tang, p.soP
             ";
@@ -386,20 +386,24 @@ switch ($action) {
         }
         break;
 
-    
-    // 9. THỐNG KÊ DASHBOARD (GET)
-   
+    // ==========================================================
+    // 9. THỐNG KÊ DASHBOARD (GET) - ĐÃ SỬA DOANH THU
+    // ==========================================================
     case 'dashboard_stats':
         if ($method != 'GET') jsonError('Phương thức không được hỗ trợ', 405);
         try {
             $stats = [];
-            $stmt = $conn->query("SELECT COUNT(*) AS count FROM P WHERE trangThaiP = N'Đang dùng'");
+            // Số phòng đang dùng
+            $stmt = $conn->query("SELECT COUNT(*) AS count FROM p WHERE trangThaiP = N'Đang dùng'");
             $stats['dangDung'] = $stmt->fetch()['count'] ?? 0;
-            $stmt = $conn->query("SELECT COUNT(*) AS count FROM DP WHERE DATE(ngayNhan) = CURDATE() AND trangThai = 'CheckedIn'");
+            // Số check-in hôm nay
+            $stmt = $conn->query("SELECT COUNT(*) AS count FROM dp WHERE DATE(ngayNhan) = CURDATE() AND trangThai = 'CheckedIn'");
             $stats['checkinHomNay'] = $stmt->fetch()['count'] ?? 0;
-            $stmt = $conn->query("SELECT SUM(soBoGiat + soNgayWifi + soLuotSpa) AS count FROM DP WHERE trangThai = 'CheckedIn'");
+            // Số yêu cầu dịch vụ
+            $stmt = $conn->query("SELECT SUM(soBoGiat + soNgayWifi + soLuotSpa) AS count FROM dp WHERE trangThai = 'CheckedIn'");
             $stats['tongDV'] = $stmt->fetch()['count'] ?? 0;
-            $stmt = $conn->query("SELECT SUM(tongTien) AS total FROM HD WHERE DATE(ngayXuat) = CURDATE() AND ttThanhToan = 'Paid'");
+            // *** SỬA: Lấy tổng doanh thu từ tất cả hóa đơn đã thanh toán (không giới hạn ngày) ***
+            $stmt = $conn->query("SELECT SUM(tongTien) AS total FROM hd WHERE ttThanhToan = 'Paid'");
             $stats['doanhThu'] = number_format($stmt->fetch()['total'] ?? 0, 0, ',', '.');
             jsonSuccess($stats, 'Lấy thống kê thành công');
         } catch (PDOException $e) {
@@ -407,13 +411,13 @@ switch ($action) {
         }
         break;
 
-   
+    // ==========================================================
     // 10. DANH SÁCH KHÁCH SẠN (GET)
-    
+    // ==========================================================
     case 'list_hotels':
         if ($method != 'GET') jsonError('Phương thức không được hỗ trợ', 405);
         try {
-            $stmt = $conn->query("SELECT maKS, tenKS FROM KS ORDER BY tenKS");
+            $stmt = $conn->query("SELECT maKS, tenKS FROM ks ORDER BY tenKS");
             $result = $stmt->fetchAll();
             jsonSuccess($result, 'Lấy danh sách khách sạn thành công');
         } catch (PDOException $e) {
